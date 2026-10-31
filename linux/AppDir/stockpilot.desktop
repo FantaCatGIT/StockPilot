@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=StockPilot
+Comment=Auto rules bot, charts and profit tracker for Screen Stocks
+Exec=AppRun
+Icon=stockpilot
+Categories=Game;
+Terminal=false
