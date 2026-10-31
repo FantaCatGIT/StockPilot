@@ -1,0 +1,17 @@
+#!/bin/bash
+# Uninstall StockPilot (macOS)
+DATA="$HOME/Library/Application Support/StockPilot"
+G="$HOME/Library/Application Support/Conradical Games/Screen Stocks"
+SAV="$G/thesmallshort_online_settings.sav"
+ask() { osascript -e "button returned of (display dialog \"$1\" with title \"Uninstall StockPilot\" buttons {\"Cancel\", \"$2\"} default button 2)" 2>/dev/null | grep -q "$2"; }
+ask "Remove StockPilot? This stops the bot, switches the game's mod support off and deletes your rules and saved chart and profit data. Custom skins are kept." "Remove" || exit 0
+pkill -f 'StockPilot.ps1|FantaStocks.ps1|ScreenStocksPanel.ps1' 2>/dev/null; sleep 1
+if [ -f "$SAV" ] && grep -Eq '"modSupport"[[:space:]]*:[[:space:]]*"?true' "$SAV"; then
+  while pgrep -f 'Screen Stocks\.app/Contents/MacOS' >/dev/null 2>&1; do
+    ask "Close Screen Stocks so mod support can be switched off, then click Done." "Done" || break
+  done
+  pgrep -f 'Screen Stocks\.app/Contents/MacOS' >/dev/null 2>&1 || sed -i '' -E 's/("modSupport"[[:space:]]*:[[:space:]]*"?)true/\1false/' "$SAV"
+fi
+rm -rf "$G/mods/commands" "$G/mods/export" "$SAV.backup" "$DATA" "$HOME/Library/Application Support/ScreenStocksPanel" "$HOME/Library/Application Support/FantaStocks"
+rm -rf "/Applications/StockPilot.app" "$HOME/Applications/StockPilot.app" "/Applications/Screen Stocks Panel.app" "$HOME/Applications/Screen Stocks Panel.app" "/Applications/FantaStocks.app" "$HOME/Applications/FantaStocks.app" 2>/dev/null
+osascript -e 'display dialog "StockPilot was removed." with title "Uninstall StockPilot" buttons {"OK"} default button 1' >/dev/null 2>&1

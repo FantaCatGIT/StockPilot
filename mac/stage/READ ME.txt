@@ -1,0 +1,11 @@
+STOCKPILOT v1.1 - MAC (a mod for Screen Stocks)
+
+1. Drag "StockPilot" onto the Applications folder.
+2. Open it from Applications. The first time, macOS blocks it because it isn't
+   from the App Store: open System Settings > Privacy & Security, scroll down and
+   click "Open Anyway" (older macOS: right-click the app > Open).
+3. First start downloads PowerShell once (about 70 MB), then the panel opens in
+   your browser window. It turns the game's mod support on for you.
+
+Stop the bot with the Stop button in the panel. To remove everything, open
+"Uninstall StockPilot".

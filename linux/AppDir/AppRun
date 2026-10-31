@@ -1,0 +1,71 @@
+#!/bin/bash
+# StockPilot - Linux launcher (AppImage)
+HERE="$(dirname "$(readlink -f "$0")")"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}/StockPilot"
+APPS="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+ME="${APPIMAGE:-$(readlink -f "$0")}"
+SAV=thesmallshort_online_settings.sav
+mkdir -p "$DATA"
+OLD="${XDG_DATA_HOME:-$HOME/.local/share}/ScreenStocksPanel"
+if [ -d "$OLD" ]; then pkill -f 'ScreenStocksPanel.ps1' 2>/dev/null; [ -e "$DATA/ScreenStocksRules.json" ] || cp -a "$OLD/." "$DATA/" 2>/dev/null; rm -rf "$OLD"; rm -f "$APPS/screenstockspanel.desktop" "$APPS/screenstockspanel-uninstall.desktop"; fi
+OLD2="${XDG_DATA_HOME:-$HOME/.local/share}/FantaStocks"   # old name
+if [ -d "$OLD2" ]; then pkill -f 'FantaStocks.ps1' 2>/dev/null; sleep 1; [ -e "$DATA/ScreenStocksRules.json" ] || cp -a "$OLD2/." "$DATA/" 2>/dev/null; rm -rf "$OLD2"; rm -f "$APPS/fantastocks.desktop" "$APPS/fantastocks-uninstall.desktop"; fi
+say()  { if command -v kdialog >/dev/null 2>&1; then kdialog --title "StockPilot" --msgbox "$1" 2>/dev/null
+         elif command -v zenity >/dev/null 2>&1; then zenity --info --title="StockPilot" --text="$1" 2>/dev/null
+         elif command -v notify-send >/dev/null 2>&1; then notify-send "StockPilot" "$1"; else echo "$1"; fi; }
+note() { if command -v notify-send >/dev/null 2>&1; then notify-send -i "$DATA/icon.png" "StockPilot" "$1"; else echo "$1"; fi; }
+ask()  { if command -v kdialog >/dev/null 2>&1; then kdialog --title "StockPilot" --yesno "$1" 2>/dev/null
+         elif command -v zenity >/dev/null 2>&1; then zenity --question --title="StockPilot" --text="$1" 2>/dev/null
+         elif [ -t 0 ]; then read -r -p "$1 [y/N] " a; [[ "$a" =~ ^[yY] ]]; else return 0; fi; }
+game_dirs() {
+  local tail="steamapps/compatdata/4356780/pfx/drive_c/users/steamuser/AppData/LocalLow/Conradical Games/Screen Stocks"
+  for r in "$HOME/.local/share/Steam" "$HOME/.steam/steam" "$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam"; do
+    [ -f "$r/$tail/$SAV" ] && echo "$r/$tail"
+  done
+}
+
+if [ "$1" = "--uninstall" ]; then
+  ask "Remove StockPilot?
+
+This stops the bot, switches the game's mod support off and deletes your rules and saved chart / profit data. Custom skins are kept." || exit 0
+  pkill -f 'StockPilot.ps1|FantaStocks.ps1|ScreenStocksPanel.ps1' 2>/dev/null; sleep 1
+  while IFS= read -r G; do
+    [ -z "$G" ] && continue
+    if grep -Eq '"modSupport"[[:space:]]*:[[:space:]]*"?true' "$G/$SAV"; then
+      while pgrep -f 'Screen Stocks\.exe' >/dev/null 2>&1; do
+        ask "Close Screen Stocks so mod support can be switched off, then click Yes. (No skips this step.)" || break
+      done
+      pgrep -f 'Screen Stocks\.exe' >/dev/null 2>&1 || sed -i -E 's/("modSupport"[[:space:]]*:[[:space:]]*"?)true/\1false/' "$G/$SAV"
+    fi
+    rm -rf "$G/mods/commands" "$G/mods/export" "$G/$SAV.backup" "$G/StockPilot" "$G/ScreenStocksPanel" "$G/ScreenStocksRules.json" "$G/SSPanelData" "$G/StockPilot.bat"
+  done < <(game_dirs)
+  rm -rf "$DATA"
+  rm -f "$APPS/stockpilot.desktop" "$APPS/stockpilot-uninstall.desktop"
+  say "StockPilot was removed. You can delete the AppImage file too."
+  exit 0
+fi
+
+# PowerShell runs the bot. Use the system one, or download a private copy once.
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 POWERSHELL_TELEMETRY_OPTOUT=1 POWERSHELL_UPDATECHECK=Off
+PWSH="$(command -v pwsh 2>/dev/null)"
+[ -z "$PWSH" ] && [ -x "$DATA/pwsh/pwsh" ] && PWSH="$DATA/pwsh/pwsh"
+if [ -z "$PWSH" ]; then
+  case "$(uname -m)" in x86_64|amd64) ARCH=linux-x64;; aarch64|arm64) ARCH=linux-arm64;; *) say "Sorry, this CPU type isn't supported."; exit 1;; esac
+  note "First start: downloading PowerShell (about 70 MB). This only happens once."
+  TMP="$(mktemp -d)"; URL="https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-$ARCH.tar.gz"
+  if curl -fsSL "$URL" -o "$TMP/p.tgz" 2>/dev/null || wget -qO "$TMP/p.tgz" "$URL"; then
+    mkdir -p "$DATA/pwsh" && tar -xzf "$TMP/p.tgz" -C "$DATA/pwsh" && chmod +x "$DATA/pwsh/pwsh" && PWSH="$DATA/pwsh/pwsh"
+  fi
+  rm -rf "$TMP"
+  [ -z "$PWSH" ] && { say "Couldn't download PowerShell. Check your internet connection and try again."; exit 1; }
+fi
+
+# menu entries (start + uninstall), refreshed every launch so they follow the AppImage if you move it
+cp "$HERE/stockpilot.png" "$DATA/icon.png" 2>/dev/null
+mkdir -p "$APPS"
+printf '[Desktop Entry]\nType=Application\nName=StockPilot\nComment=Auto rules bot, charts and profit tracker for Screen Stocks\nExec="%s"\nIcon=%s\nCategories=Game;\nTerminal=false\n' "$ME" "$DATA/icon.png" > "$APPS/stockpilot.desktop"
+printf '[Desktop Entry]\nType=Application\nName=Uninstall StockPilot\nExec="%s" --uninstall\nIcon=%s\nCategories=Game;\nTerminal=false\n' "$ME" "$DATA/icon.png" > "$APPS/stockpilot-uninstall.desktop"
+
+cp "$HERE/usr/share/stockpilot/StockPilot.ps1" "$DATA/StockPilot.ps1"
+export SSBOT_DATA="$DATA"
+exec "$PWSH" -NoProfile -File "$DATA/StockPilot.ps1"

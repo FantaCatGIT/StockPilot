@@ -1,0 +1,25 @@
+StockPilot v1.1 - source
+
+StockPilot.ps1          The whole app: auto-actions bot, history recorder, local web server and the panel UI
+                        (HTML/CSS/JS embedded inside). Runs on Windows PowerShell 5.1 and PowerShell 7.
+server/worker.js        Shared-price server (Cloudflare Worker + D1 database bound as DB). Live at
+                        https://stockpilot.alisaandhomiayt.workers.dev - StockPilot sends the prices it
+                        records here and fills gaps from other players. Not built by build.sh.
+cwin/                   Windows: launcher (StockPilot.exe), installer and uninstaller in C,
+                        setup.ps1 / uninstall.ps1 (run by them), resources, manifest, icon.
+linux/AppDir/           Linux AppImage contents: AppRun launcher script, .desktop entry, icon.
+mac/stage/              macOS app bundles (StockPilot.app, Uninstall StockPilot.app) and the DMG read-me.
+logo/                   Logo in ico / icns / png.
+build.sh                Builds everything (Windows exes via llvm-mingw, AppImage, DMG, zip).
+                        At build time StockPilot.ps1 is copied into cwin/, the AppImage and the Mac app.
+                        NOTE: the paths in build.sh (and cwin/build.sh) point at the scratchpad of the
+                        session that built it; adjust $F / $S and the tool paths (llvm-mingw,
+                        appimagetool, runtime-x86_64, pycdlib) for your machine before running.
+
+This version adds, versus the first v1.1:
+  - Skins from a picture, GIF or MP4/WebM video (loop up to 15s). A built-in GIF decoder makes GIFs
+    work in Firefox/Tor too; pictures are fit to the screen so they are not zoomed/cropped.
+  - Shared 24/7 price tracking through server/worker.js.
+  - +/-% and the chart colour show only for stocks you hold (grey otherwise; green up / red down).
+  - Starts with no auto actions (no presets).
+  - "Rules" renamed to "Auto actions" in the panel.
