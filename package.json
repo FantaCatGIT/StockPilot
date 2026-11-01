@@ -1,0 +1,9 @@
+{
+  "name": "stockpilot",
+  "productName": "StockPilot",
+  "version": "2.0.0",
+  "description": "StockPilot - auto actions, live charts, portfolio, news and skins for Screen Stocks",
+  "main": "main.js",
+  "author": "StockPilot (fan-made mod for Screen Stocks)",
+  "license": "MIT"
+}

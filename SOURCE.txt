@@ -1,0 +1,37 @@
+StockPilot v2.0.0 - source
+
+package.json            App name / version (Electron 38 app, no npm packages needed).
+main.js                 Desktop shell: window, tray icon, notifications, start at login, single instance,
+                        macOS menu, Linux autostart, Start-menu shortcut fix.
+preload.js              The small bridge the window uses to talk to the app (window.sp).
+backend/                Everything that runs in the background (plain Node.js):
+  core.js               Engine: reads mods/export/market.json, sends orders to mods/commands, detects trades.
+  store.js              Price history recorder (history/<day>/<stock>.csv, trades.csv, daily.json).
+  share.js              Shared price server client (fills chart gaps while the game was closed).
+  automation.js         Auto actions ("buy $BASE when the price is below 400").
+  bot.js                Experimental bot (event trader + dip buyer), practice mode by default.
+  news.js               Official announcements (Steam news for app 4356780 - same posts as Discord #announcements).
+  skins.js              Game skins incl. animated GIF/MP4 skins.
+  migrate.js            Brings data over from StockPilot 1.x on the first start.
+  paths.js, util.js     Game folder lookup (Windows / macOS / Linux-Proton) and helpers.
+ui/                     The window: index.html, styles.css (light + dark), app.js, charts.js, gif.js, logo.png.
+build/                  Builds for every system (run on Linux or macOS):
+  make-windows.sh       Windows 10/11: ARM64 + x64 installers, and with ELECTRON_IA32 set one installer for every PC.
+  installer.nsi         NSIS installer / uninstaller script (single-CPU or both-CPU installer).
+  exe.rc, set-exe-info.py   Puts the StockPilot icon + version info into StockPilot.exe.
+  make-mac.sh           macOS (Apple Silicon): StockPilot-<ver>-macOS.dmg.
+  make-dmg.py           Makes the compressed .dmg without a Mac. mac/ = install/uninstall helpers + read-me.
+  make-linux.sh         Linux x64: StockPilot-<ver>-linux-x64.tar.xz (+ a .deb). linux/ = install scripts.
+  make-icons.py         Draws the icon (white plane on blue) in every size: icon.png/.ico, logo/*.
+  icon.ico, icon.png    App icons.
+server/worker.js        Cloudflare Worker for the shared price server (D1 database bound as DB).
+test/sim.js             Fake Screen Stocks for testing (writes market.json, executes orders).
+test/shot.js            Starts the app and saves screenshots (testing).
+logo/                   Logo in ico / icns / png.
+
+Run from source:  npx electron .        (or any Electron 38 binary:  electron .)
+Build Windows:    ELECTRON_X64=... ELECTRON_ARM64=... ./build/make-windows.sh
+Build macOS:      ELECTRON_MAC_ARM64=... ./build/make-mac.sh
+Build Linux:      ELECTRON_LINUX_X64=... ./build/make-linux.sh
+New icon:         python3 build/make-icons.py .
+(the ELECTRON_* values are the Electron 38.2.2 zips from github.com/electron/electron/releases)

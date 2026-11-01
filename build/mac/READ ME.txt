@@ -1,0 +1,14 @@
+STOCKPILOT 2.0 for macOS (Apple Silicon: M1 / M2 / M3 / M4) - a mod for Screen Stocks
+
+Install (easiest):
+  Right-click "Install StockPilot.command" and choose Open (then Open again).
+  On macOS 15 or newer: if it says it can't be verified, open System Settings >
+  Privacy & Security, scroll down and click "Open Anyway".
+  StockPilot is copied to Applications and starts. It's also in Launchpad.
+
+Or drag StockPilot into the Applications folder shown here. If macOS then says
+StockPilot "is damaged" or can't be opened, use the Install command above instead
+(StockPilot isn't from the App Store, and the installer clears that warning).
+
+Uninstall: right-click "Uninstall StockPilot.command" > Open.
+The game must be open for trades to happen.

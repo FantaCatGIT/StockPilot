@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>StockPilot</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="logo.png" alt=""><b>StockPilot</b><span class="conn" id="conn"><i></i><span>Starting…</span></span></div>
+  <div class="stats">
+    <div class="stat s-cash"><span>Cash</span><b id="hCash">–</b></div>
+    <div class="stat s-nw"><span>Net worth</span><b id="hNw">–</b></div>
+    <div class="stat s-today"><span>Today</span><b id="hToday">–</b></div>
+    <div class="stat s-level"><span>Level</span><b id="hLevel">–</b></div>
+    <div class="stat s-buy"><span>Buy in</span><b id="hBuy">–</b></div>
+    <div class="stat s-short"><span>Short in</span><b id="hShort">–</b></div>
+  </div>
+  <div class="actions">
+    <div class="seg" id="mode" title="Auto actions: Practice only logs what they would do, Live really trades"><button data-m="practice">Practice</button><button data-m="live">Live</button></div>
+    <button class="btn outline sm" id="pauseBtn">Pause</button>
+    <button class="btn sm" id="gameBtn">Open game</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-t="market" class="sel">Market</button>
+  <button data-t="compare">Compare</button>
+  <button data-t="portfolio">Portfolio</button>
+  <button data-t="dividends">Dividends</button>
+  <button data-t="journal">Journal</button>
+  <button data-t="stats">Statistics</button>
+  <button data-t="news">News <span class="pill" id="newsBadge" style="display:none"></span></button>
+  <button data-t="auto">Auto actions</button>
+  <button data-t="bot">Bot <span class="pill grey">experimental</span></button>
+  <button data-t="skins">Skins</button>
+  <button data-t="settings">Settings</button>
+</nav>
+<div class="strip" id="strip"><span class="k" id="stState">IDLE</span><span id="stLast">Last actual: –</span><span id="stResult"></span><span class="grow"></span><span id="stShare"></span><span id="stGame"></span></div>
+<div class="banner" id="banner"></div>
+<main>
+  <!-- MARKET -->
+  <section class="tab sel" id="t-market">
+    <div class="mbar">
+      <input type="search" id="mSearch" placeholder="Search stocks">
+      <div class="seg" id="mSort"><button data-s="game" class="sel">Game order</button><button data-s="name">Name</button><button data-s="change">Change</button><button data-s="held">Holdings</button></div>
+      <span class="grow"></span>
+      <span class="hint" id="mSizeHint">Trade size</span>
+      <div class="seg" id="mSize"><button data-p="10">10%</button><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="100">100%</button></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="gridEmpty" style="display:none"></div>
+  </section>
+
+  <!-- COMPARE -->
+  <section class="tab" id="t-compare">
+    <div class="panel">
+      <div class="row" style="margin-bottom:10px"><h3 style="margin:0">Compare stocks</h3><span class="hint">% change from the start of the range</span><span class="grow"></span><div class="seg ranges" id="cRange"></div></div>
+      <div class="chartbox"><canvas id="cChart"></canvas></div>
+      <div class="legend" id="cLegend"></div>
+      <div class="row" style="margin-top:10px"><button class="link" id="cAll">Select all</button><button class="link" id="cNone">Clear</button><button class="link" id="cHeld">Only what I hold</button></div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <section class="tab" id="t-portfolio">
+    <div class="tiles" id="pTiles"></div>
+    <div class="panel"><h3>Allocation</h3><div class="alloc" id="pAlloc"></div><div class="legend" id="pAllocLegend"></div></div>
+    <div class="panel"><h3>Positions</h3><div class="scroll"><table class="t" id="pTable"></table></div></div>
+  </section>
+
+  <!-- DIVIDENDS -->
+  <section class="tab" id="t-dividends">
+    <div class="tiles" id="dTiles"></div>
+    <div class="cols c2">
+      <div class="panel"><h3>Dividends received</h3><div class="scroll"><table class="t" id="dTable"></table></div></div>
+      <div class="panel"><h3>Dividend rates</h3><div class="scroll"><table class="t" id="dRates"></table></div></div>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="tab" id="t-journal">
+    <div class="row" style="margin-bottom:12px"><div class="seg" id="jSub"><button data-j="trades" class="sel">Trades</button><button data-j="notes">Notes</button><button data-j="activity">Activity</button></div><span class="grow"></span>
+      <select id="jStock"><option value="">All stocks</option></select>
+      <select id="jSrc"><option value="">Everyone</option><option value="you">You in the game</option><option value="app">You in StockPilot</option><option value="auto">Auto actions</option><option value="bot">Bot</option></select></div>
+    <div class="panel" id="j-trades"><div class="scroll" style="max-height:640px"><table class="t" id="jTable"></table></div></div>
+    <div class="panel" id="j-notes" style="display:none">
+      <div class="row" style="margin-bottom:10px"><input type="date" id="jDate"><span class="hint" id="jSaved"></span></div>
+      <textarea id="jNote" placeholder="What did you do today, what worked, what didn't…"></textarea>
+    </div>
+    <div class="panel" id="j-activity" style="display:none"><div class="log" id="jLog"></div></div>
+  </section>
+
+  <!-- STATISTICS -->
+  <section class="tab" id="t-stats">
+    <div class="tiles" id="sTiles"></div>
+    <div class="panel"><div class="row" style="margin-bottom:10px"><h3 style="margin:0">Net worth · last 7 days</h3></div><div class="chartbox sm"><canvas id="sNw"></canvas></div></div>
+    <div class="cols c2">
+      <div class="panel"><h3>Days</h3><div class="scroll"><table class="t" id="sDays"></table></div></div>
+      <div class="panel"><h3>Per stock</h3><div class="scroll"><table class="t" id="sStocks"></table></div><h3 style="margin-top:16px">Who traded</h3><div id="sSrc"></div></div>
+    </div>
+  </section>
+
+  <!-- NEWS -->
+  <section class="tab" id="t-news">
+    <div class="cols c3">
+      <div class="panel"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">Announcements</h3><span class="grow"></span><button class="btn ghost sm" id="nRefresh">Refresh</button></div>
+        <div class="hint" style="margin-bottom:6px">Official Screen Stocks announcements (the same posts as the Discord #announcements channel).</div>
+        <div id="nSteam"></div></div>
+      <div class="panel"><h3>Market news · highs &amp; lows</h3><div id="nMarket" class="scroll" style="max-height:760px"></div></div>
+      <div class="panel"><h3>Scheduled events</h3><div id="nSched"></div></div>
+    </div>
+  </section>
+
+  <!-- AUTO ACTIONS -->
+  <section class="tab" id="t-auto">
+    <div class="panel">
+      <div class="row" style="margin-bottom:10px"><h3 style="margin:0">Auto actions</h3><span class="grow"></span>
+        <span class="hint">Mode</span><div class="seg" id="aMode"><button data-m="practice">Practice</button><button data-m="live">Live</button></div>
+        <button class="btn sm" id="aAdd">+ Add auto action</button></div>
+      <div class="hint" style="margin-bottom:12px">An auto action trades for you when a price crosses a level: <i>buy $BASE when the price is below 400</i>. In Practice mode it only writes to the activity log.</div>
+      <div id="aList"></div>
+      <div class="empty" id="aEmpty">No auto actions yet. Press <b>+ Add auto action</b> to make your first one.</div>
+    </div>
+    <div class="panel"><h3>Activity</h3><div class="log" id="aLog" style="max-height:260px"></div></div>
+  </section>
+
+  <!-- BOT -->
+  <section class="tab" id="t-bot">
+    <div class="banner show" style="margin:0 0 14px">The bot is <b>experimental</b>. It starts in Practice (it only says what it would do). Turn on Live only when you're happy with what it does.</div>
+    <div class="panel"><div class="field"><div class="lbl"><b>Live trading</b><small>Off = practice: the bot only writes what it would do.</small></div><label class="sw"><input type="checkbox" id="bLive"><span></span></label></div></div>
+    <div class="cols c2">
+      <div class="panel"><h3>Event trader</h3>
+        <div class="hint" style="margin-bottom:6px">The game announces price resets (pumps and crashes) ahead of time. This reacts shortly before they hit.</div>
+        <div class="field"><div class="lbl"><b>Enabled</b></div><label class="sw"><input type="checkbox" data-b="events.enabled"><span></span></label></div>
+        <div class="field"><div class="lbl"><b>Act this many seconds before</b></div><input type="number" data-b="events.leadSec" min="5" max="1800"></div>
+        <div class="field"><div class="lbl"><b>Sell my shares before a crash</b></div><label class="sw"><input type="checkbox" data-b="events.closeLongs"><span></span></label></div>
+        <div class="field"><div class="lbl"><b>Short before a crash</b></div><label class="sw"><input type="checkbox" data-b="events.shortDrops"><span></span></label></div>
+        <div class="field"><div class="lbl"><b>Buy before a pump</b></div><label class="sw"><input type="checkbox" data-b="events.buyRises"><span></span></label></div>
+        <div class="field"><div class="lbl"><b>Size</b><small>% of cash per trade</small></div><input type="number" data-b="events.sizePct" min="1" max="100"></div>
+        <div class="field"><div class="lbl"><b>Exit after the event</b><small>seconds</small></div><input type="number" data-b="events.exitAfterSec" min="0" max="600"></div>
+      </div>
+      <div class="panel"><h3>Dip buyer</h3>
+        <div class="hint" style="margin-bottom:6px">Buys a stock after it drops below its recent average, then sells at your profit target or stop.</div>
+        <div class="field"><div class="lbl"><b>Enabled</b></div><label class="sw"><input type="checkbox" data-b="dip.enabled"><span></span></label></div>
+        <div class="field"><div class="lbl"><b>Buy after a drop of</b><small>% under the average</small></div><input type="number" data-b="dip.dipPct" min="0.5" max="90" step="0.5"></div>
+        <div class="field"><div class="lbl"><b>Average over</b><small>minutes</small></div><input type="number" data-b="dip.windowMin" min="1" max="180"></div>
+        <div class="field"><div class="lbl"><b>Take profit at</b><small>%</small></div><input type="number" data-b="dip.takeProfitPct" min="0.2" max="1000" step="0.5"></div>
+        <div class="field"><div class="lbl"><b>Stop loss at</b><small>%</small></div><input type="number" data-b="dip.stopLossPct" min="0.2" max="95" step="0.5"></div>
+        <div class="field"><div class="lbl"><b>Size</b><small>% of cash per trade</small></div><input type="number" data-b="dip.sizePct" min="1" max="100"></div>
+        <div class="field" style="display:block"><div class="lbl" style="margin-bottom:8px"><b>Stocks to watch</b></div><div id="bStocks" class="legend" style="margin:0"></div></div>
+      </div>
+    </div>
+    <div class="cols c2">
+      <div class="panel"><h3>What the bot sees</h3><div id="bStatus"></div></div>
+      <div class="panel"><h3>Bot history</h3><div class="log" id="bHist" style="max-height:300px"></div></div>
+    </div>
+  </section>
+
+  <!-- SKINS -->
+  <section class="tab" id="t-skins">
+    <div class="cols c2">
+      <div class="panel"><h3>Make a skin</h3>
+        <div class="drop" id="drop">Drop a picture, GIF or MP4 (up to 15 s) here<br><br><button class="btn sm" id="skPick">Choose file</button><input type="file" id="skFile" accept="image/*,video/mp4,video/webm,video/quicktime,.gif,.mp4,.webm,.mov,.m4v" style="display:none"></div>
+        <div class="hint" id="skMsg" style="margin-top:8px"></div>
+        <div id="skForm" style="display:none;margin-top:12px">
+          <img id="skPrev" alt="" style="width:100%;border-radius:8px;border:1px solid var(--line);background:#000">
+          <div class="hint" id="skAnim" style="display:none;margin-top:6px"></div>
+          <div class="field"><div class="lbl"><b>Name</b></div><input type="text" id="skName" maxlength="40" style="width:220px"></div>
+          <div class="field"><div class="lbl"><b>Colors</b><small>picked from your picture</small></div>
+            <div class="row"><label class="clr">Panels <input type="color" id="skPanels"></label><label class="clr">Buttons <input type="color" id="skButtons"></label><label class="clr">Glow <input type="color" id="skGlowC"></label></div></div>
+          <div class="field"><div class="lbl"><b>Window frames</b></div><label class="sw"><input type="checkbox" id="skFrames" checked><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Glow</b></div><label class="sw"><input type="checkbox" id="skGlow"><span></span></label></div>
+          <div class="row" style="margin-top:10px"><button class="btn" id="skMake">Add to the game</button></div>
+        </div>
+      </div>
+      <div class="panel"><div class="row" style="margin-bottom:8px"><h3 style="margin:0">Your skins</h3><span class="grow"></span><button class="btn ghost sm" id="skFolder">Open skins folder</button></div>
+        <div class="hint" style="margin-bottom:6px">Pick a skin in the game's settings. Animated skins loop while the game and StockPilot are open.</div>
+        <div id="skList"></div></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="tab" id="t-settings">
+    <div class="cols c2">
+      <div>
+        <div class="panel"><h3>Appearance</h3>
+          <div class="field"><div class="lbl"><b>Theme</b><small>Light is the default</small></div><div class="seg" id="setTheme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">System</button></div></div>
+          <div class="field"><div class="lbl"><b>Hide locked stocks</b></div><label class="sw"><input type="checkbox" data-s="hideLocked"><span></span></label></div>
+        </div>
+        <div class="panel"><h3>Window</h3>
+          <div class="field"><div class="lbl"><b>Keep running in the tray when closed</b><small>Auto actions and the bot keep working</small></div><label class="sw"><input type="checkbox" data-s="closeToTray"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Start with Windows</b><small>Starts quietly in the tray</small></div><label class="sw"><input type="checkbox" data-s="startWithWindows"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Always on top</b></div><label class="sw"><input type="checkbox" data-s="alwaysOnTop"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Keep the PC awake</b><small>So it keeps trading while you're away</small></div><label class="sw"><input type="checkbox" data-s="keepAwake"><span></span></label></div>
+        </div>
+        <div class="panel"><h3>Trading</h3>
+          <div class="field"><div class="lbl"><b>Default trade size</b><small>Used by the Market buttons</small></div><div class="seg" id="setSize"><button data-v="10">10%</button><button data-v="25">25%</button><button data-v="50">50%</button><button data-v="100">100%</button></div></div>
+          <div class="field"><div class="lbl"><b>Ask before each trade</b></div><label class="sw"><input type="checkbox" data-s="confirmTrades"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Open Screen Stocks when StockPilot starts</b></div><label class="sw"><input type="checkbox" data-s="openGameOnStart"><span></span></label></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel"><h3>Price sharing</h3>
+          <div class="field"><div class="lbl"><b>Share prices with other players</b><small>Fills the gaps in your charts while the game was closed</small></div><label class="sw"><input type="checkbox" data-s="share.on"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Server</b><small id="shareMsg"></small></div><input type="text" id="shareUrl" placeholder="default server" style="width:300px"></div>
+        </div>
+        <div class="panel"><h3>Notifications</h3>
+          <div class="field"><div class="lbl"><b>New announcements</b></div><label class="sw"><input type="checkbox" data-s="notify.announcements"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Scheduled events (5 min before)</b></div><label class="sw"><input type="checkbox" data-s="notify.events"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Auto action trades</b></div><label class="sw"><input type="checkbox" data-s="notify.auto"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Bot trades</b></div><label class="sw"><input type="checkbox" data-s="notify.bot"><span></span></label></div>
+          <div class="field"><div class="lbl"><b>Dividends</b></div><label class="sw"><input type="checkbox" data-s="notify.income"><span></span></label></div>
+        </div>
+        <div class="panel"><h3>Folders</h3>
+          <div class="field"><div class="lbl"><b>Game folder</b><small id="gameDir" class="mono"></small></div><button class="btn ghost sm" data-open="game">Open</button></div>
+          <div class="field"><div class="lbl"><b>StockPilot data</b><small id="dataDir" class="mono"></small></div><button class="btn ghost sm" data-open="data">Open</button></div>
+        </div>
+        <div class="panel"><h3>About</h3>
+          <div class="field"><div class="lbl"><b id="aboutVer">StockPilot</b><small id="aboutSub"></small></div><button class="btn outline sm" id="quitBtn">Quit StockPilot</button></div>
+          <div class="hint">Fan-made mod for Screen Stocks. It uses the game's official mod files (mods/export and mods/commands).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <div class="head"><span class="dot" id="mdDot"></span><b class="sym" id="mdSym" style="font-size:20px"></b><span class="mono" id="mdPx" style="font-size:18px"></span><span class="hint" id="mdSub"></span>
+    <span class="grow"></span><div class="seg ranges" id="mdRange"></div><button class="btn ghost sm x" id="mdClose">Close</button></div>
+  <div class="chartbox"><canvas id="mdChart"></canvas></div>
+  <div class="row" style="margin-top:12px;flex-wrap:wrap" id="mdInfo"></div>
+  <div class="row" style="margin-top:12px"><div class="seg" id="mdSize"><button data-p="10">10%</button><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="100">100%</button></div><span class="grow"></span>
+    <button class="btn" data-a="buy">Buy</button><button class="btn outline" data-a="sell">Sell</button><button class="btn" data-a="short">Short</button><button class="btn outline" data-a="cover">Cover</button><button class="btn ghost" data-a="close">Close all</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+<script src="gif.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
